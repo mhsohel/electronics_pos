@@ -1,0 +1,13 @@
+{
+    "name": "Showroom",
+    "alias": "showroom",
+    "description": "",
+    "keywords": [],
+    "priority": 0,
+    "providers": [
+        "Modules\\Showroom\\Providers\\ShowroomServiceProvider"
+    ],
+    "aliases": {},
+    "files": [],
+    "requires": []
+}

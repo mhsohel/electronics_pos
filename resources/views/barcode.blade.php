@@ -1,0 +1,1 @@
+{{!! DNS1D::getBarcodeHTML('00000001', 'C39')!!}}
