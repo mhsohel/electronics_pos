@@ -62,6 +62,7 @@ class PurchaseController extends Controller
     public function store(Request $request)
     {
         $invoiceID = random_int(100000, 999999);
+
         foreach ($request->product_id as $k => $id) {
             $data = new Purchase();
             $data->invoiceID = $invoiceID;

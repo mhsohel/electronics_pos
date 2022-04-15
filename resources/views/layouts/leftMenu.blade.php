@@ -90,7 +90,7 @@
                          </li>
                          
                          <li>
-                              <a href="{{route('sales.show')}}">
+                              <a href="{{route('sales.list')}}">
                                    <i class="fa fa-arrow-circle-o-right"></i>
                                    Sales List
                               </a>

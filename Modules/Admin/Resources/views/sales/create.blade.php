@@ -1,5 +1,6 @@
 @extends('layouts.master')
 @section('content')
+
 <div class="row">
 <div class="col-lg-12">
 <div class="ibox">
@@ -14,12 +15,10 @@
 <div class="ibox-content">
 <div class="row">
 <div class="col-md-12 table-responsive">
-@if ($errors->any())
+@if(Session::has('error'))
 <div class="alert alert-danger">
 <ul>
-@foreach ($errors->all() as $error)
-<li>{{ $error }}</li>
-@endforeach
+<li>{{ Session::get('error')}}</li>
 </ul>
 </div>
 @endif
@@ -28,31 +27,29 @@
 <!-- <input type="hidden" name="_token" value="zGz8gIY90dUq20GGeELKSh6jRuXF4cg9bSuoNzka"> -->
 <table class="table table-bordered" id="myTable">
 <tr>
-<th colspan="2">
+<!-- <th colspan="2">
 <input type="text" id="barcode" class="form-control" placeholder="Scan barcode">
-</th>
+</th> -->
 <th colspan="2">
 {!! Form::select('', $p_list, '', ['class' =>
 'form-control chosen-select','id'=>'product']) !!}
 </th>
-<th>
-	<div class="form-check form-check-inline">
-		<input class="form-check-input " type="radio" name="dealorshow" id="show" value="showroom" checked="checked">
-		<label class="form-check-label " for="show">Showroom</label>
-	</div>
-	<div class="form-check form-check-inline">
-		<input class="form-check-input" type="radio" name="dealorshow" id="deal" value="dealer">
-		<label class="form-check-label" for="deal">Dealer</label>
-	</div>
-</th>
-<th>
-{!! Form::select('', $showroom, '', ['class' =>
+<th colspan="2">
+<div class="form-check form-check-inline">
+     <input class="form-check-input " type="radio" name="dealorshow" id="show" value="showroom" checked="checked">
+     <label class="form-check-label " for="show">Showroom</label>
+</div>
+<div class="form-check form-check-inline">
+     <input class="form-check-input" type="radio" name="dealorshow" id="deal" value="dealer">
+     <label class="form-check-label" for="deal">Dealer</label>
+</div>
+{!! Form::select('', $showroom, '', ['required'=>'true','name'=>'showroom' ,'class' =>
 'form-control chosen-select','id'=>'showroom']) !!}
 
-{!! Form::select('', $dealer, '', ['class' =>
+{!! Form::select('', $dealer, '', ['required'=>'true', 'name'=>'dealer','class' =>
 'form-control chosen-select','id'=>'dealer']) !!}
 </th>
-<th>
+<th colspan="2">
 <input type="text" class="form-control date" placeholder="" id="date_modified" value="<?php echo date("Y-m-d"); ?>">
 </th>
 <th></th>
@@ -68,16 +65,17 @@
 <th></th>
 </tr>
 <tr>
-<th colspan="2">
+<!-- <th colspan="2">
 <div class="form-check">
 <input class="form-check-input" type="checkbox" value="" id="inst">
 <label class="form-check-label" for="inst">
 Add Instalment
 </label>
 </div>
-</th>
+</th> -->
 <th colspan="3" class="text-right">Sub Total =</th>
 <th colspan="2" class="sub">0</th>
+<input type="hidden" name="total" class="total" value="0.00">
 </tr>
 </table>
 
@@ -135,15 +133,15 @@ $(document).ready(function() {
                               '<th class="align-middle">' +
                               '<input type="text" class="form-control mb-1 dis" value="' + dis + '" name="dis[]">' +
                               '<div class="form-check form-check-inline">' +
-                              '<input class="form-check-input per dism" type="radio" name="discount_type' + sl + '" id="per' + sl + '" value="percent" checked="checked">' +
+                              '<input class="form-check-input per dism" data-id="'+productId+'" type="radio" name="discount_type' + sl + '" id="per' + sl + '" value="percent" checked="checked"><input type="hidden" name="dis_type[]" class="dis_type" value="percent">' +
                               '<label class="form-check-label " for="per' + sl + '">percentage</label>' +
                               '</div>' +
                               '<div class="form-check form-check-inline">' +
-                              '<input class="form-check-input amt dism" type="radio" name="discount_type' + sl + '" id="amt' + sl + '" value="fixed">' +
+                              '<input class="form-check-input amt dism" data-id="'+productId+'" type="radio" name="discount_type' + sl + '" id="amt' + sl + '" value="fixed">' +
                               '<label class="form-check-label" for="amt' + sl + '">Amount</label>' +
                               '</div>' +
                               '</th>' +
-                              '<th colspan="3"><input type="text" class="form-control tl" value="' + tl + '" readonly>' +
+                              '<th colspan="3"><input type="text" name="total[]" class="form-control tl" value="' + tl + '" readonly>' +
                               '</th>' +
                               '<th>' +
                               '<a href="javascript:void(0)" class="btn btn-xs btn-danger rm">X</a>' +
@@ -189,7 +187,7 @@ $(document).ready(function() {
                '<label class="form-check-label" for="amt' + sl + '">Amount</label>' +
                '</div>' +
                '</th>' +
-               '<th><input type="text" class="form-control tl" value="' + tl + '" name="total[]">' +
+               '<th><input type="text" class="form-control tl" value="' + tl + '">' +
                '</th>' +
                '<th>' +
                '<a href="javascript:void(0)" class="btn btn-xs btn-danger rm">X</a>' +
@@ -264,17 +262,20 @@ $(document).ready(function() {
      });
      // selecting discount method
      $(".table tbody").on('click', '.per,.amt', function() {
+          var productId = $(this).attr('data-id');
           var qty = $(this).closest('tr').find('.qty').val();
           var mrp = $(this).closest('tr').find('.mrp').val();
           var dis = $(this).closest('tr').find('.dis').val();
           var price = qty * mrp;
           var dis_val = $(this).closest('tr').find(".dism:checked").val();
           if (dis_val == "percent") {
+               $('.uni_'+productId+' .dis_type').val('percent');
                var dis_t = (price / 100) * dis;
                var total = price - dis_t;
                $(this).closest('tr').find('.tl').val(total);
                $.fn.calculate_sub();
           } else {
+               $('.uni_'+productId+' .dis_type').val('fixed');
                var total = price - dis;
                $(this).closest('tr').find('.tl').val(total);
                $.fn.calculate_sub();
@@ -315,6 +316,7 @@ $(document).ready(function() {
                var ss = parseInt($(this).find('.tl').val());
                s += ss;
                $(".sub").text(s);
+               $(".total").val(s);
           });
      }
      //Calculation of discount

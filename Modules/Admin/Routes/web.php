@@ -38,7 +38,8 @@ Route::middleware(['check_admin'])->prefix('admin')->group(function () {
     Route::prefix('sales')->group(function(){
         Route::get('/sales-product', 'SalesController@create')->name('sales.create');
         Route::post('/post-product', 'SalesController@store')->name('sales.store');
-        Route::get('/sales-list', 'SalesController@show')->name('sales.show');
+        Route::get('/sales-invoice/{id}', 'SalesController@show')->name('sales.show');
+        Route::get('/sales-list', 'SalesController@index')->name('sales.list');
         // ajax routing for purches information
         Route::get('getPurchasesInfo/{id}', 'SalesController@getPurchaseInfo');
         //getMrp information

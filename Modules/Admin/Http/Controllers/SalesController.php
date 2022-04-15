@@ -20,8 +20,9 @@ class SalesController extends Controller
      */
     public function index()
     {
-        
-        return view('admin::index');
+        session(['menu' => 'sales']);
+        $list = Main_sale::where('approval', 'no')->groupBy('invoiceID')->get();
+        return \view('admin::sales.index', \compact('list'));
     }
 
     /**
@@ -51,29 +52,32 @@ class SalesController extends Controller
      * @return Renderable
      */
     public function store(Request $request)
-    {
-        // dd($request->all());
+    {   
         $invoiceID = random_int(100000, 999999);
-        foreach ($request->productId as $k => $id) {
-            $l = $k+1;
-            $data = new Main_sale();
-            $data->invoiceID = $invoiceID;
-            $data->product_id = $id;
-            $data->dealer_id = $request->supplier_id;
-            $data->batchID = $request->batchId[$k];
-            $data->qty = $request->qty[$k];
-            $data->mrp = $request->mrp[$k];
-            $data->discount = $request->dis[$k];
-            // $data->discount_type = $request->discount_type[$l];
-            $data->qty = $request->qty[$k];
-            $data->total = $request->total[$k];
-            
-            $data->user_id = Auth::user()->id;
-            $SaveStatus= $data->save();
+        if(!empty($request->product_id && $request->qty && $request->showroom || $request->dealer)){
+            foreach ($request->product_id as $k => $id) {
+                $data = new Main_sale();
+                $data->invoiceID = $invoiceID;
+                $data->product_id = $id;
+                $data->showroom_id = $request->showroom;
+                $data->dealer_id = $request->dealer;
+                $data->batchID = $request->batchId[$k];
+                $data->qty = $request->qty[$k];
+                $data->mrp = $request->mrp[$k];
+                $data->discount = $request->dis[$k];
+                $data->discount_type = $request->dis_type[$k];
+                $data->qty = $request->qty[$k];
+                $data->total = $request->total;
+                $data->user_id = Auth::user()->id;
+                $SaveStatus= $data->save();
+            }
+            if($SaveStatus){
+                return redirect()->route('sales.show', $invoiceID);
+            }
+        }else{
+            return redirect()->route('sales.create')->with('error', 'Please fill product, showroom/dealer, qty fields');
         }
-        if($SaveStatus){
-            return redirect()->route('sales.show');
-        }
+        
         
     }
 
@@ -82,12 +86,11 @@ class SalesController extends Controller
      * @param int $id
      * @return Renderable
      */
-    public function show()
+    public function show($invoiceID)
     {
         session(['menu' => 'sales']);
-        $list = Main_sale::orderBy('id','DESC')->groupBy('invoiceID')->get();
-        // dd($list);
-        return view('admin::sales.index',compact('list'));
+        $data = Main_sale::where('invoiceID', $invoiceID)->get();
+        return view('admin::sales.invoice', \compact('data'));
     }
 
     /**
