@@ -62,7 +62,6 @@
 <th>MRP</th>
 <th>Discount</th>
 <th>Total</th>
-<th></th>
 </tr>
 <tr>
 <!-- <th colspan="2">
@@ -73,8 +72,12 @@ Add Instalment
 </label>
 </div>
 </th> -->
-<th colspan="3" class="text-right">Sub Total =</th>
-<th colspan="2" class="sub">0</th>
+<th colspan="5" class="text-right">Total Discount =</th>
+<th colspan="1" class="t_discount">0</th>
+</tr>
+<tr>
+<th colspan="6" class="text-right">Sub Total =</th>
+<th colspan="1" class="sub">0</th>
 <input type="hidden" name="total" class="total" value="0.00">
 </tr>
 </table>
@@ -131,16 +134,16 @@ $(document).ready(function() {
                               '<th><input type="text" class="form-control qty" value="' + qty + '" name="qty[]"></th>' +
                               '<th><input type="text" class="form-control mrp" value="' + mrp + '" name="mrp[]" readonly></th>' +
                               '<th class="align-middle">' +
-                              '<input type="text" class="form-control mb-1 dis" value="' + dis + '" name="dis[]">' +
+                              '<input type="text" class="form-control mb-1 dis" autocomplete="off" value="' + dis + '" name="dis[]">' +
                               '<div class="form-check form-check-inline">' +
                               '<input class="form-check-input per dism" data-id="'+productId+'" type="radio" name="discount_type' + sl + '" id="per' + sl + '" value="percent" checked="checked"><input type="hidden" name="dis_type[]" class="dis_type" value="percent">' +
                               '<label class="form-check-label " for="per' + sl + '">percentage</label>' +
                               '</div>' +
                               '<div class="form-check form-check-inline">' +
                               '<input class="form-check-input amt dism" data-id="'+productId+'" type="radio" name="discount_type' + sl + '" id="amt' + sl + '" value="fixed">' +
-                              '<label class="form-check-label" for="amt' + sl + '">Amount</label>' +
+                              '<label class="form-check-label" for="amt' + sl + '">Amount</label><br>' +
                               '</div>' +
-                              '</th>' +
+                              '<input readonly class="form-control each-dis">' +
                               '<th colspan="3"><input type="text" name="total[]" class="form-control tl" value="' + tl + '" readonly>' +
                               '</th>' +
                               '<th>' +
@@ -213,18 +216,24 @@ $(document).ready(function() {
                     var mrp = $('.uni_'+productId).find('.mrp').val();
                     var dis = $('.uni_'+productId).find('.dis').val();
                     var price = qty * mrp;
-                    var dis_val = dis;
+                    var dis_val = $('.uni_'+productId).find(".dism:checked").val();
+                    console.log(dis_val)
                     if (dis_val == "percent") {
+                         console.log(dis)
                          var dis_t = (price / 100) * dis;
                          var total = price - dis_t;
                          $('.uni_'+productId).find('.tl').val(total);
+                         $('.uni_'+productId).find('.each-dis').val(dis_t.toFixed(2))
                          $.fn.calculate_sub();
+                         $.fn.calculate_total_dis();
                          $.fn.serial();
                     }
                     else {
                          var total = price - dis;
                          $('.uni_'+productId).find('.tl').val(total);
+                         $('.uni_'+productId).find('.each-dis').val(dis.toFixed(2));
                          $.fn.calculate_sub();
+                         $.fn.calculate_total_dis();
                          $.fn.serial();
                     }
                },
@@ -273,12 +282,16 @@ $(document).ready(function() {
                var dis_t = (price / 100) * dis;
                var total = price - dis_t;
                $(this).closest('tr').find('.tl').val(total);
+               $(this).closest('tr').find('.each-dis').val(dis_t);
                $.fn.calculate_sub();
+               $.fn.calculate_total_dis();
           } else {
                $('.uni_'+productId+' .dis_type').val('fixed');
                var total = price - dis;
                $(this).closest('tr').find('.tl').val(total);
+               $(this).closest('tr').find('.each-dis').val(dis);
                $.fn.calculate_sub();
+               $.fn.calculate_total_dis();
           }
      });
      
@@ -292,12 +305,16 @@ $(document).ready(function() {
           if (dis_val == "percent") {
                var dis_t = (price / 100) * dis;
                var total = price - dis_t;
+               $(this).closest('tr').find('.each-dis').val(dis_t.toFixed(2));
                $(this).closest('tr').find('.tl').val(total);
                $.fn.calculate_sub();
+               $.fn.calculate_total_dis();
           } else {
                var total = price - dis;
                $(this).closest('tr').find('.tl').val(total);
+               $(this).closest('tr').find('.each-dis').val(dis.toFixed(2));
                $.fn.calculate_sub();
+               $.fn.calculate_total_dis();
           }
      });
      //auto calculation
@@ -309,6 +326,15 @@ $(document).ready(function() {
           $.fn.calculate_sub();
           $.fn.calculate_dis();
      });
+     //discount total calculate 
+     $.fn.calculate_total_dis = function() {
+          var s = 0;
+          $(".dis").closest('tr').each(function(index, value) {
+               var ss = parseInt($(this).find('.each-dis').val());
+               s += ss;
+               $(".t_discount").text(s.toFixed(2));
+          });
+     }
      // calculationg subtotal
      $.fn.calculate_sub = function() {
           var s = 0;
@@ -332,7 +358,7 @@ $(document).ready(function() {
                var sub_t = $(".sub").text();
                var dis_m = $("#discount").val();
                var gr_t = sub_t - dis_m;
-               $(".gr_t").val(gr_t);
+               $(".gr_t").val(gr_t);          
           }
      }
      $.fn.serial=function(){
