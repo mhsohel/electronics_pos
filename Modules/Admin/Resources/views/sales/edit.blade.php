@@ -100,6 +100,7 @@ $subtotal += $price - $dis_t;
         </select>
      </th>
      <th><input type="text" class="form-control qty" value="{{intval($sale->qty)}}" name="qty[]"></th>
+     <th><input type="text" class="form-control in_stock" value="" name=""></th>
      <th><input type="text" class="form-control mrp" value="{{$sale->mrp}}" name="mrp[]" readonly></th>
      <th class="align-middle">
           <input type="text" class="form-control mb-1 dis" autocomplete="off" value="{{$sale->discount}}" name="dis[]">
@@ -193,6 +194,7 @@ $(document).ready(function() {
                               '<select class="form-control chosen-select cus-width batchId" data-id="'+data.priduct_id+'" id="batchId" name="batchId[]">' + batch + '</select>' +
                               '</th>' +
                               '<th><input type="text" class="form-control qty" value="' + qty + '" name="qty[]"></th>' +
+                              '<th><input type="text" class="form-control in_stock" value="' + in_stock + '"></th>' +
                               '<th><input type="text" class="form-control mrp" value="' + mrp + '" name="mrp[]" readonly></th>' +
                               '<th class="align-middle">' +
                               '<input type="text" class="form-control mb-1 dis" disabled autocomplete="off" value="' + dis + '" name="dis[]">' +

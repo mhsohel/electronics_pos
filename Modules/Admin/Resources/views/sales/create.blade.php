@@ -59,6 +59,7 @@
 <th>Product Name</th>
 <th>Batch Id</th>
 <th>QTY</th>
+<th>STOCK</th>
 <th>MRP</th>
 <th>Discount</th>
 <th>Total</th>
@@ -72,11 +73,11 @@ Add Instalment
 </label>
 </div>
 </th> -->
-<th colspan="5" class="text-right">Total Discount =</th>
+<th colspan="6" class="text-right">Total Discount =</th>
 <th colspan="1" class="t_discount">0</th>
 </tr>
 <tr>
-<th colspan="6" class="text-right">Sub Total =</th>
+<th colspan="7" class="text-right">Sub Total =</th>
 <th colspan="1" class="sub">0</th>
 <input type="hidden" name="total" class="total" value="0.00">
 </tr>
@@ -137,6 +138,7 @@ $(document).ready(function() {
                               '<select class="form-control chosen-select cus-width batchId" data-id="'+data.priduct_id+'" id="batchId" name="batchId[]">' + batch + '</select>' +
                               '</th>' +
                               '<th><input type="text" class="form-control qty" value="' + qty + '" name="qty[]"></th>' +
+                              '<th><input type="text" class="form-control in_stock" readonly value="' + in_stock + '"></th>' +
                               '<th><input type="text" class="form-control mrp" value="' + mrp + '" name="mrp[]" readonly></th>' +
                               '<th class="align-middle">' +
                               '<input type="text" class="form-control mb-1 dis" disabled autocomplete="off" value="' + dis + '" name="dis[]">' +
@@ -211,6 +213,7 @@ $(document).ready(function() {
      $(document).on('change','#batchId', function() {
           var batchId = $(this).val();
           var productId = $(this).attr('data-id');
+          var qty = 0;
           $.ajax({
                url: '/admin/sales/getMrp/'+productId+'/'+batchId,
                type: 'GET',
@@ -218,14 +221,18 @@ $(document).ready(function() {
                     console.log(data)
                     $('.uni_'+productId).find('.mrp').val(data.getMrp.mrp);
                     var in_stock = data.in_stock;
-                    var qty = $('.uni_'+productId).find('.qty').val();
+                    qty = $('.uni_'+productId).find('.qty').val();
                     var mrp = $('.uni_'+productId).find('.mrp').val();
                     var dis = $('.uni_'+productId).find('.dis').val();
+                    $('.uni_'+productId).find('.in_stock').val(in_stock);
                     var price = qty * mrp;
                     var dis_val = $('.uni_'+productId).find(".dism:checked").val();
+                    console.log('qty: '+qty);
+                    console.log('in_stock:  '+qty);
                     if(in_stock < qty){
+                         console.log('in if');
                          alert('Quantity is not available in stock');
-                         $('.uni_'+productId).find('.qty').val(0);
+                         $('.uni_'+productId).find('.qty').val(in_stock);
                          $('.uni_'+productId).find('.tl').val(0);
                          $('.uni_'+productId).find('.each-dis').val(0);
                          $('.uni_'+productId).find('.dis').val(0);
@@ -234,6 +241,7 @@ $(document).ready(function() {
                          $.fn.calculate_total_dis();
                     }
                     else{
+                         console.log('in else');
                          if (dis_val == "percent") {
                               if(dis <= 100){
                                    dis_t=0;
@@ -387,11 +395,13 @@ $(document).ready(function() {
                    var in_stock = data.in_stock;
                    if(in_stock < qty){
                          alert('Quantity is not available in stock');
-                         $('.uni_'+productId).find('.qty').val(0);
+                         $('.uni_'+productId).find('.qty').val(in_stock);
                          $('.uni_'+productId).find('.tl').val(0);
                          $('.uni_'+productId).find('.each-dis').val(0);
-                         $('.uni_'+productId).find('.dis').val(0);
-                         $('.uni_'+productId).find('.dis').prop('disabled', true);
+                         if($('.uni_'+productId).find('.qty').val() <=0){
+                              $('.uni_'+productId).find('.dis').val(0);
+                              $('.uni_'+productId).find('.dis').prop('disabled', true);
+                         }
                          $.fn.calculate_sub();
                          $.fn.calculate_total_dis();
                    }
