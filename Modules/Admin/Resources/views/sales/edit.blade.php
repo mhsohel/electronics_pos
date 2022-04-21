@@ -1,11 +1,10 @@
 @extends('layouts.master')
 @section('content')
-
 <div class="row">
 <div class="col-lg-12">
 <div class="ibox">
 <div class="ibox-title">
-<h5>Purchase Products </h5>
+<h5>Update Purchase</h5>
 <div class="ibox-tools">
 <a class="collapse-link">
 <i class="fa fa-chevron-up"></i>
@@ -36,18 +35,25 @@
 </th>
 <th colspan="2">
 <div class="form-check form-check-inline">
-     <input class="form-check-input " type="radio" name="dealorshow" id="show" value="showroom" checked="checked">
+     <input class="form-check-input " type="radio" name="dealorshow" id="show" value="showroom" {{$showroom_id->showroom_id != '' ? 'checked':''}}>
      <label class="form-check-label " for="show">Showroom</label>
 </div>
 <div class="form-check form-check-inline">
-     <input class="form-check-input" type="radio" name="dealorshow" id="deal" value="dealer">
+     <input class="form-check-input" type="radio" name="dealorshow" id="deal" value="dealer" {{$dealer_id->dealer_id != '' ? 'checked':''}}>
      <label class="form-check-label" for="deal">Dealer</label>
 </div>
-{!! Form::select('', $showroom, '', ['name'=>'showroom' ,'class' =>
-'form-control chosen-select','id'=>'showroom']) !!}
-
-{!! Form::select('', $dealer, '', ['name'=>'dealer','class' =>
-'form-control chosen-select','id'=>'dealer']) !!}
+<select class="form-control chosen-select" id="showroom" name="showroom" >
+    <option value="">Select Showroom</option>
+    @foreach($showroom as $show)
+    <option value="{{$show->id}}" @if($show->id == $showroom_id->showroom_id) selected @endif>{{$show->name}}</option>
+    @endforeach
+</select>
+<select class="form-control chosen-select" id="dealer" name="dealer">
+    <option value="">Select Dealer</option>
+    @foreach($dealer as $deal)
+    <option value="{{$deal->id}}" @if($deal->id == $dealer_id->dealer_id) selected @endif>{{$deal->name}}</option>
+    @endforeach
+</select>
 </th>
 <th colspan="2">
 <input type="text" class="form-control date" placeholder="" id="date_modified" value="<?php echo date("Y-m-d"); ?>">
@@ -63,6 +69,57 @@
 <th>Discount</th>
 <th>Total</th>
 </tr>
+@php 
+$i=0;
+$total_dis=0;
+$subtotal = 0;
+@endphp
+@foreach($sales as $sale)
+@php 
+$i++; 
+$price = $sale->qty * $sale->mrp;
+$dis = $sale->discount;
+if($sale->discount_type == 'percent'){
+    $dis_t = ($price / 100) * $dis;
+}else{
+    $dis_t = $dis;
+}
+$total_dis += $dis_t; 
+$subtotal += $price - $dis_t;
+@endphp 
+<tr class="uni_'+productId+'">
+     <th class="sl">{{$i}}</th>
+     <th><input type="hidden" class="productID" name="product_id[]" value="{{$sale->product_id}}">{{$sale->product->name}} [ {{$sale->product->size->size}}, {{$sale->product->color->color}}]</th>
+     <th class="wm">
+        <select class="form-control chosen-select cus-width batchId" data-id="{{$sale->product_id}}" id="batchId" name="batchId[]">
+            <option value="">Select Batch</option>
+            @php $allBatchID = App\Models\Purchase::select('batchID')->where('product_id',$sale->product_id)->get(); @endphp
+            @foreach($allBatchID as $batch)
+            <option value="{{$batch->batchID}}" @if($batch->batchID == $sale->batchID) selected @endif>{{$batch->batchID}}</option>
+            @endforeach
+        </select>
+     </th>
+     <th><input type="text" class="form-control qty" value="{{intval($sale->qty)}}" name="qty[]"></th>
+     <th><input type="text" class="form-control mrp" value="{{$sale->mrp}}" name="mrp[]" readonly></th>
+     <th class="align-middle">
+          <input type="text" class="form-control mb-1 dis" autocomplete="off" value="{{$sale->discount}}" name="dis[]">
+          <div class="form-check form-check-inline">
+               <input class="form-check-input per dism" data-id="{{$sale->product_id}}" type="radio" name="discount_type{{$i}}" id="per{{$i}}" value="percent" {{$sale->discount_type == 'percent' ? 'checked' : ''}}>
+               <input type="hidden" name="dis_type[]" class="dis_type" value="percent">
+               <label class="form-check-label " for="per{{$i}}">percentage</label>
+          </div>
+          <div class="form-check form-check-inline">
+               <input class="form-check-input amt dism" data-id="{{$sale->product_id}}" type="radio" name="discount_type{{$i}}" id="amt{{$i}}" value="fixed" {{$sale->discount_type == 'fixed' ? 'checked' : ''}}>
+               <label class="form-check-label" for="amt{{$i}}">Amount</label><br>
+          </div>
+          <input readonly class="form-control each-dis" value="{{$dis_t}}">
+     </th>
+     <th colspan="3"><input type="text" name="total[]" class="form-control tl" value="{{$sale->qty * $sale->mrp - $dis_t}}" readonly></th>
+     <th>
+          <a href="javascript:void(0)" class="btn btn-xs btn-danger rm">X</a>
+     </th>
+</tr>
+@endforeach
 <tr>
 <!-- <th colspan="2">
 <div class="form-check">
@@ -73,11 +130,11 @@ Add Instalment
 </div>
 </th> -->
 <th colspan="5" class="text-right">Total Discount =</th>
-<th colspan="1" class="t_discount">0</th>
+<th colspan="1" class="t_discount">{{$total_dis}}</th>
 </tr>
 <tr>
 <th colspan="6" class="text-right">Sub Total =</th>
-<th colspan="1" class="sub">0</th>
+<th colspan="1" class="sub">{{$subtotal}}</th>
 <input type="hidden" name="total" class="total" value="0.00">
 </tr>
 </table>
@@ -98,7 +155,6 @@ value="Submit">
 </div>
 </div>
 </div>
-
 <script>
 $(document).ready(function() {
      

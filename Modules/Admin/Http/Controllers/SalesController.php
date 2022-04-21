@@ -99,8 +99,20 @@ class SalesController extends Controller
      * @return Renderable
      */
     public function edit($id)
-    {
-        return view('admin::edit');
+    {   
+        $showroom_id =  Main_sale::select('showroom_id')->where('invoiceID', $id)->first();
+        $dealer_id =  Main_sale::select('dealer_id')->where('invoiceID', $id)->first();
+        $sales = Main_sale::where('invoiceID', $id)->get();
+        $product = Product::pluck('name', 'id');
+        $showroom = Showroom::select('name', 'id')->get();
+        $dealer = Dealer::select('name', 'id')->get();
+        $product_list = Product::all();
+        $p_list = array();
+        foreach ($product_list as $p) {
+            $p_list[$p->id] = $p->name . ' [ ' . $p->size->size . ',' . $p->color->color . ' ]';
+        }
+        $p_list[''] = 'Select Product';     
+        return view('admin::sales.edit', \compact('p_list', 'product','showroom', 'dealer','sales','showroom_id','dealer_id'));
     }
 
     /**
@@ -121,12 +133,22 @@ class SalesController extends Controller
      */
     public function destroy($id)
     {
-        //
+        $invoiceID = Main_sale::where('invoiceID', $id)->first();   
+        if(!empty($invoiceID)){
+            $invoiceID->delete();
+            return redirect()->route('sales.list')->with('success', 'Invoice Deleted Successfully');
+        }
+        abort(404);
     }
 
     public function getPurchaseInfo($id){
         $product = Product::find($id);
+        $find_batchId = Purchase::select('batchID')->where('product_id',$product->id)->orderBy('batchID','ASC')->first();
+        $inventory_product = Purchase::select('qty')->where('product_id',$product->id)->where('batchID',$find_batchId->batchID)->first();
+        $sold_product  = Main_sale::where('product_id',$product->id)->where('batchID',$find_batchId->batchID)->sum('qty');
+        $in_stock = $inventory_product->qty - $sold_product;
         $data['purchase']  = Purchase::select('batchID','mrp')->where('product_id',$product->id)->orderBy('batchID','ASC')->get();
+        $data['in_stock'] = $in_stock;
         $data['name'] = $product->name;
         $data['size'] = $product->size->size;
         $data['color'] = $product->color->color;
@@ -134,11 +156,42 @@ class SalesController extends Controller
         return \response()->json($data, 200);
     }
     public function getMrp($productId, $batchId){
-        $mrp = Purchase::select('mrp')
+        $productId = $productId;
+        $batchId =  $batchId;
+        $inventory = Purchase::select('qty')
         ->groupBy('batchID')
         ->where('product_id',$productId)
         ->where('batchID',$batchId)
         ->first();
-        return response()->json($mrp, 200);
+        $sold_product  = Main_sale::where('product_id',$productId)->where('batchID',$batchId)->sum('qty');
+        $data['in_stock'] = $inventory->qty - $sold_product;
+
+        $data['getMrp'] = Purchase::select('mrp')
+        ->groupBy('batchID')
+        ->where('product_id',$productId)
+        ->where('batchID',$batchId)
+        ->first();
+        return response()->json($data, 200);
+    }
+    public function checkInventory(Request $request){
+        $productId = $request->productId;
+        $batchId =  $request->batchId;
+        $inventory = Purchase::select('qty')
+        ->groupBy('batchID')
+        ->where('product_id',$productId)
+        ->where('batchID',$batchId)
+        ->first();
+        $sold_product  = Main_sale::where('product_id',$productId)->where('batchID',$batchId)->sum('qty');
+        $in_stock = $inventory->qty - $sold_product;
+        if($in_stock < $request->qty){
+            return response()->json([
+                'message' => 'Quantity is not available in stock',
+                'in_stock' => $in_stock
+            ], 200);
+        }
+        return response()->json([
+            'success' => 'Product is in stock',
+            'in_stock' => $in_stock
+        ], 200);
     }
 }

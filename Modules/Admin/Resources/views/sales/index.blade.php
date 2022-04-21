@@ -45,14 +45,8 @@
                                              <td>{{$l->invoiceID}}</td>
                                              <td>{{$l->total}}</td>   
                                              <td>
-                                                  <form action="" method="post">
-                                                       <a href=""
-                                                            class="btn btn-xs btn-success">Edit</a>
-                                                       @csrf
-                                                       @method('DELETE')
-                                                       <button type="submit" class="btn btn-xs btn-danger"
-                                                            onclick="return confirm('Are you sure?')">Delete</button>
-                                                  </form>
+                                                  <a href="{{route('sales.edit',$l->invoiceID)}}" class="btn btn-xs btn-success">Edit</a>
+                                                  <a href="{{route('sales.delete',$l->invoiceID)}}" type="submit" class="btn btn-xs btn-danger" onclick="return confirm('Are you sure?')">Delete</button>
                                              </td>
                                         </tr>
                                         @endforeach

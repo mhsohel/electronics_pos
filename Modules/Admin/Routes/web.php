@@ -36,9 +36,12 @@ Route::middleware(['check_admin'])->prefix('admin')->group(function () {
     Route::get('/', 'AdminController@index')->name('admin');
     //sales routing
     Route::prefix('sales')->group(function(){
+        Route::get('/sales-product/{id}', 'SalesController@destroy')->name('sales.delete');
         Route::get('/sales-product', 'SalesController@create')->name('sales.create');
         Route::post('/post-product', 'SalesController@store')->name('sales.store');
         Route::get('/sales-invoice/{id}', 'SalesController@show')->name('sales.show');
+        Route::get('/sales-edit/{id}', 'SalesController@edit')->name('sales.edit');
+        Route::get('/check-inventory', 'SalesController@checkInventory')->name('sales.check-inventory');
         Route::get('/sales-list', 'SalesController@index')->name('sales.list');
         // ajax routing for purches information
         Route::get('getPurchasesInfo/{id}', 'SalesController@getPurchaseInfo');

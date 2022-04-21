@@ -2878,7 +2878,9 @@ select.form-control:not([size]):not([multiple]) {
 div#showroom_chosen {
   display: block;
 }
-
+.wm{
+  width: 100px;
+}
 div#dealer_chosen {
   display: none;
 }
