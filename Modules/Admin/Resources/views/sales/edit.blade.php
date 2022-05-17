@@ -21,7 +21,7 @@
 </ul>
 </div>
 @endif
-<form action="{{route('sales.store')}}" method="POST">
+<form action="{{route('sales.update')}}" method="POST">
 @csrf
 <!-- <input type="hidden" name="_token" value="zGz8gIY90dUq20GGeELKSh6jRuXF4cg9bSuoNzka"> -->
 <table class="table table-bordered" id="myTable">
@@ -65,6 +65,7 @@
 <th>Product Name</th>
 <th>Batch Id</th>
 <th>QTY</th>
+<th>Stock</th>
 <th>MRP</th>
 <th>Discount</th>
 <th>Total</th>
@@ -87,20 +88,26 @@ if($sale->discount_type == 'percent'){
 $total_dis += $dis_t; 
 $subtotal += $price - $dis_t;
 @endphp 
-<tr class="uni_'+productId+'">
+<tr class="uni_{{$sale->product_id}}">
      <th class="sl">{{$i}}</th>
+     <input type="hidden" name="invoiceID" value="{{$sale->invoiceID}}">
      <th><input type="hidden" class="productID" name="product_id[]" value="{{$sale->product_id}}">{{$sale->product->name}} [ {{$sale->product->size->size}}, {{$sale->product->color->color}}]</th>
      <th class="wm">
-        <select class="form-control chosen-select cus-width batchId" data-id="{{$sale->product_id}}" id="batchId" name="batchId[]">
+          <select class="form-control chosen-select cus-width batchId" data-id="{{$sale->product_id}}" id="batchId" name="batchId[]">
             <option value="">Select Batch</option>
-            @php $allBatchID = App\Models\Purchase::select('batchID')->where('product_id',$sale->product_id)->get(); @endphp
+            @php 
+               $allBatchID = \App\Models\Purchase::select('batchID')->where('product_id',$sale->product_id)->get(); 
+               $inventory_product = \App\Models\Purchase::select('qty')->where('product_id',$sale->product_id)->where('batchID',$sale->batchID)->first();
+               $sold_product  =  \App\Models\Main_sale::where('product_id',$sale->product_id)->where('batchID',$sale->batchID)->sum('qty');
+               $in_stock = $inventory_product->qty - $sold_product;
+            @endphp
             @foreach($allBatchID as $batch)
             <option value="{{$batch->batchID}}" @if($batch->batchID == $sale->batchID) selected @endif>{{$batch->batchID}}</option>
             @endforeach
-        </select>
+          </select>
      </th>
      <th><input type="text" class="form-control qty" value="{{intval($sale->qty)}}" name="qty[]"></th>
-     <th><input type="text" class="form-control in_stock" value="" name=""></th>
+     <th><input type="text" class="form-control in_stock" value="{{$in_stock}}" name="" readonly></th>
      <th><input type="text" class="form-control mrp" value="{{$sale->mrp}}" name="mrp[]" readonly></th>
      <th class="align-middle">
           <input type="text" class="form-control mb-1 dis" autocomplete="off" value="{{$sale->discount}}" name="dis[]">
@@ -113,7 +120,7 @@ $subtotal += $price - $dis_t;
                <input class="form-check-input amt dism" data-id="{{$sale->product_id}}" type="radio" name="discount_type{{$i}}" id="amt{{$i}}" value="fixed" {{$sale->discount_type == 'fixed' ? 'checked' : ''}}>
                <label class="form-check-label" for="amt{{$i}}">Amount</label><br>
           </div>
-          <input readonly class="form-control each-dis" value="{{$dis_t}}">
+          <input readonly class="form-control each-dis" value="{{$dis_t * $sale->qty}}">
      </th>
      <th colspan="3"><input type="text" name="total[]" class="form-control tl" value="{{$sale->qty * $sale->mrp - $dis_t}}" readonly></th>
      <th>
@@ -130,11 +137,11 @@ Add Instalment
 </label>
 </div>
 </th> -->
-<th colspan="5" class="text-right">Total Discount =</th>
+<th colspan="6" class="text-right">Total Discount =</th>
 <th colspan="1" class="t_discount">{{$total_dis}}</th>
 </tr>
 <tr>
-<th colspan="6" class="text-right">Sub Total =</th>
+<th colspan="7" class="text-right">Sub Total =</th>
 <th colspan="1" class="sub">{{$subtotal}}</th>
 <input type="hidden" name="total" class="total" value="0.00">
 </tr>
@@ -158,7 +165,16 @@ value="Submit">
 </div>
 <script>
 $(document).ready(function() {
-     
+     var deal = $('#deal:checked').val()
+     var showroom = $('#showroom:checked').val()
+     if(deal){
+          $('div#dealer_chosen').css('display', 'block');
+          $('div#showroom_chosen').css('display', 'none');
+     }
+     if(showroom){
+          $('div#dealer_chosen').css('display', 'none');
+          $('div#showroom_chosen').css('display', 'block');
+     }
      let productName = '';
      let productId = ''
      $("#product").change(function(){
@@ -189,12 +205,12 @@ $(document).ready(function() {
                          $(".table tbody .th").after(
                               '<tr class="uni_'+productId+'">' +
                               '<th class="sl">'+ sl +'</th>' +
-                              '<th><input type="hidden" class="productID" name="product_id[]" value="'+data.priduct_id+'">' + p_name + '</th>' +
+                              '<th><input type="hidden" class="productID" name="product_id[]" value="'+data.product_id+'">' + p_name + '</th>' +
                               '<th>' +
-                              '<select class="form-control chosen-select cus-width batchId" data-id="'+data.priduct_id+'" id="batchId" name="batchId[]">' + batch + '</select>' +
+                              '<select class="form-control chosen-select cus-width batchId" data-id="'+data.product_id+'" id="batchId" name="batchId[]">' + batch + '</select>' +
                               '</th>' +
                               '<th><input type="text" class="form-control qty" value="' + qty + '" name="qty[]"></th>' +
-                              '<th><input type="text" class="form-control in_stock" value="' + in_stock + '"></th>' +
+                              '<th><input type="text" class="form-control in_stock" readonly value="' + in_stock + '"></th>' +
                               '<th><input type="text" class="form-control mrp" value="' + mrp + '" name="mrp[]" readonly></th>' +
                               '<th class="align-middle">' +
                               '<input type="text" class="form-control mb-1 dis" disabled autocomplete="off" value="' + dis + '" name="dis[]">' +
@@ -269,6 +285,7 @@ $(document).ready(function() {
      $(document).on('change','#batchId', function() {
           var batchId = $(this).val();
           var productId = $(this).attr('data-id');
+          var qty = 0;
           $.ajax({
                url: '/admin/sales/getMrp/'+productId+'/'+batchId,
                type: 'GET',
@@ -276,14 +293,18 @@ $(document).ready(function() {
                     console.log(data)
                     $('.uni_'+productId).find('.mrp').val(data.getMrp.mrp);
                     var in_stock = data.in_stock;
-                    var qty = $('.uni_'+productId).find('.qty').val();
+                    qty = $('.uni_'+productId).find('.qty').val();
                     var mrp = $('.uni_'+productId).find('.mrp').val();
                     var dis = $('.uni_'+productId).find('.dis').val();
+                    $('.uni_'+productId).find('.in_stock').val(in_stock);
                     var price = qty * mrp;
                     var dis_val = $('.uni_'+productId).find(".dism:checked").val();
+                    console.log('qty: '+qty);
+                    console.log('in_stock:  '+qty);
                     if(in_stock < qty){
+                         console.log('in if');
                          alert('Quantity is not available in stock');
-                         $('.uni_'+productId).find('.qty').val(0);
+                         $('.uni_'+productId).find('.qty').val(in_stock);
                          $('.uni_'+productId).find('.tl').val(0);
                          $('.uni_'+productId).find('.each-dis').val(0);
                          $('.uni_'+productId).find('.dis').val(0);
@@ -292,6 +313,7 @@ $(document).ready(function() {
                          $.fn.calculate_total_dis();
                     }
                     else{
+                         console.log('in else');
                          if (dis_val == "percent") {
                               if(dis <= 100){
                                    dis_t=0;
@@ -314,7 +336,7 @@ $(document).ready(function() {
                               if(dis <= price){
                                    var total = price - dis;
                                    $('.uni_'+productId).find('.tl').val(total);
-                                   $('.uni_'+productId).find('.each-dis').val(dis);
+                                   $('.uni_'+productId).find('.each-dis').val(dis * qty);
                                    $.fn.calculate_sub();
                                    $.fn.calculate_total_dis();                    
                               }else{
@@ -408,7 +430,7 @@ $(document).ready(function() {
                if(dis <= price){
                     var total = price - dis;
                     $(this).closest('tr').find('.tl').val(total);
-                    $(this).closest('tr').find('.each-dis').val(dis);
+                    $(this).closest('tr').find('.each-dis').val(dis * qty);
                     $.fn.calculate_sub();
                     $.fn.calculate_total_dis();                    
                }else{
@@ -426,12 +448,7 @@ $(document).ready(function() {
           var productId = $(this).closest('tr').find('.productID').val();
           var batchId = $(this).closest('tr').find('.batchId').val();
           var qty = $(this).closest('tr').find('.qty').val();
-          if(qty > 0){
-               $(this).closest('tr').find('.dis').prop('disabled', false);
-          }else if(qty == 0){
-               $('.uni_'+productId).find('.dis').val(0);
-               $(this).closest('tr').find('.dis').prop('disabled', true);
-          }
+          var dis = $(this).closest('tr').find('.dis').val();
           $.ajax({
                url: '/admin/sales/check-inventory',
                type: 'GET',
@@ -442,17 +459,43 @@ $(document).ready(function() {
                },
                dataType: 'json',
                success:function(data){
-                   var in_stock = data.in_stock;
+                    var in_stock = data.in_stock;
+                    var qty = $(this).closest('tr').find('.qty').val();
+                    var mrp = $(this).closest('tr').find('.mrp').val();
+                    var dis = $(this).closest('tr').find('.dis').val();
+                    var price = qty * mrp;
+                    var dis_val = $(this).closest('tr').find(".dism:checked").val();
+                   
                    if(in_stock < qty){
+                         $(this).closest('tr').find('.dis').prop('disabled', false);
                          alert('Quantity is not available in stock');
-                         $('.uni_'+productId).find('.qty').val(0);
-                         $('.uni_'+productId).find('.tl').val(0);
-                         $('.uni_'+productId).find('.each-dis').val(0);
-                         $('.uni_'+productId).find('.dis').val(0);
-                         $('.uni_'+productId).find('.dis').prop('disabled', true);
+                         $('.uni_'+productId).find('.qty').val(in_stock);
+                         $('.uni_'+productId).find('.tl').val(in_stock * $('.uni_'+productId).find('.mrp').val());
+                         if (dis_val == "percent") {
+                              if(dis <= 100){
+                                   dis_t=0;
+                                   var dis_t = (price / 100) * dis;
+                                   $(this).closest('tr').find('.each-dis').val(dis_t);
+                              }else{
+                                   alert('Discount cannot be greater than 100%');
+                                   $(this).closest('tr').find('.dis').val(dis);
+                                   $(this).closest('tr').find('.each-dis').val();
+                              }
+                         } 
+                         else {
+                              if(dis <= price){
+                                   $(this).closest('tr').find('.each-dis').val(dis);                   
+                              }else{
+                                   alert('Discount cannot be greater than total amount');
+                                   $(this).closest('tr').find('.dis').val(dis);
+                                   $(this).closest('tr').find('.each-dis').val();
+                              }
+                         }
                          $.fn.calculate_sub();
                          $.fn.calculate_total_dis();
-                   }
+                   }else if(qty <= 0){
+                         $('.uni_'+productId).find('.dis').val(dis);
+                    }
                },
           });
      });
@@ -485,27 +528,60 @@ $(document).ready(function() {
                if(dis <= price){
                     var total = price - dis;
                     $(this).closest('tr').find('.tl').val(total);
-                    $(this).closest('tr').find('.each-dis').val(dis);
+                    $(this).closest('tr').find('.each-dis').val(dis * qty);
                     $.fn.calculate_sub();
                     $.fn.calculate_total_dis();                    
                }else{
                     alert('Discount cannot be greater than total amount');
-                    $(this).closest('tr').find('.dis').val(0);
-                    $(this).closest('tr').find('.each-dis').val(0);
+                    $(this).closest('tr').find('.dis').val(dis);
+                    $(this).closest('tr').find('.each-dis').val( dis * qty);
                     $(this).closest('tr').find('.tl').val(price);
                     $.fn.calculate_sub();
                     $.fn.calculate_total_dis();
                }
           }
      });
-     //auto calculation
-     $(".table tbody").on('keyup', '.qty,.mrp', function() {
-          var q = $(this).closest('tr').find('.qty').val();
-          var m = $(this).closest('tr').find('.mrp').val();
-          var t = q * m;
-          $(this).closest('tr').find('.tl').val(t);
-          $.fn.calculate_sub();
-          $.fn.calculate_dis();
+
+     $(".table tbody").on('keyup', '.qty', function() {
+          var productId = $(this).closest('tr').find('.productID').val();
+          var batchId = $(this).closest('tr').find('.batchId').val();
+          console.log(productId+' '+batchId);
+          var dis_v =  $('.uni_'+productId).find('.dis').val();
+          var qty = $(this).closest('tr').find('.qty').val();
+          if(qty > 0){
+               $(this).closest('tr').find('.dis').prop('disabled', false);
+          }else if(qty == 0){
+               $('.uni_'+productId).find('.dis').val(dis_v);
+               $(this).closest('tr').find('.dis').prop('disabled', true);
+          }else if(qty == ''){
+               $('.uni_'+productId).find('.dis').val(dis_v);
+               $(this).closest('tr').find('.dis').prop('disabled', true);
+          }
+          $.ajax({
+               url: '/admin/sales/check-inventory',
+               type: 'GET',
+               data: {
+                    productId: productId,
+                    batchId: batchId,
+                    qty: qty,
+               },
+               dataType: 'json',
+               success:function(data){
+                   var in_stock = data.in_stock;
+                   if(in_stock < qty){
+                         alert('Quantity is not available in stock');
+                         $('.uni_'+productId).find('.qty').val(in_stock);
+                         $('.uni_'+productId).find('.tl').val(0);
+                         $('.uni_'+productId).find('.each-dis').val(0);
+                         if($('.uni_'+productId).find('.qty').val() <=0){
+                              $('.uni_'+productId).find('.dis').val(dis_v);
+                              $('.uni_'+productId).find('.dis').prop('disabled', true);
+                         }
+                         $.fn.calculate_sub();
+                         $.fn.calculate_total_dis();
+                   }
+               },
+          });
      });
      //discount total calculate 
      $.fn.calculate_total_dis = function() {

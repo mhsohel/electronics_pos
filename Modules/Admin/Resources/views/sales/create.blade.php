@@ -133,9 +133,9 @@ $(document).ready(function() {
                          $(".table tbody .th").after(
                               '<tr class="uni_'+productId+'">' +
                               '<th class="sl">'+ sl +'</th>' +
-                              '<th><input type="hidden" class="productID" name="product_id[]" value="'+data.priduct_id+'">' + p_name + '</th>' +
+                              '<th><input type="hidden" class="productID" name="product_id[]" value="'+data.product_id+'">' + p_name + '</th>' +
                               '<th>' +
-                              '<select class="form-control chosen-select cus-width batchId" data-id="'+data.priduct_id+'" id="batchId" name="batchId[]">' + batch + '</select>' +
+                              '<select class="form-control chosen-select cus-width batchId" data-id="'+data.product_id+'" id="batchId" name="batchId[]">' + batch + '</select>' +
                               '</th>' +
                               '<th><input type="text" class="form-control qty" value="' + qty + '" name="qty[]"></th>' +
                               '<th><input type="text" class="form-control in_stock" readonly value="' + in_stock + '"></th>' +
@@ -264,7 +264,7 @@ $(document).ready(function() {
                               if(dis <= price){
                                    var total = price - dis;
                                    $('.uni_'+productId).find('.tl').val(total);
-                                   $('.uni_'+productId).find('.each-dis').val(dis);
+                                   $('.uni_'+productId).find('.each-dis').val(dis * qty);
                                    $.fn.calculate_sub();
                                    $.fn.calculate_total_dis();                    
                               }else{
@@ -358,7 +358,7 @@ $(document).ready(function() {
                if(dis <= price){
                     var total = price - dis;
                     $(this).closest('tr').find('.tl').val(total);
-                    $(this).closest('tr').find('.each-dis').val(dis);
+                    $(this).closest('tr').find('.each-dis').val(dis * qty);
                     $.fn.calculate_sub();
                     $.fn.calculate_total_dis();                    
                }else{
@@ -375,6 +375,7 @@ $(document).ready(function() {
      $(".table tbody").on('keyup', '.qty', function() {
           var productId = $(this).closest('tr').find('.productID').val();
           var batchId = $(this).closest('tr').find('.batchId').val();
+          console.log(productId+' '+batchId);
           var qty = $(this).closest('tr').find('.qty').val();
           if(qty > 0){
                $(this).closest('tr').find('.dis').prop('disabled', false);
@@ -437,7 +438,7 @@ $(document).ready(function() {
                if(dis <= price){
                     var total = price - dis;
                     $(this).closest('tr').find('.tl').val(total);
-                    $(this).closest('tr').find('.each-dis').val(dis);
+                    $(this).closest('tr').find('.each-dis').val(dis * qty);
                     $.fn.calculate_sub();
                     $.fn.calculate_total_dis();                    
                }else{
@@ -451,14 +452,14 @@ $(document).ready(function() {
           }
      });
      //auto calculation
-     $(".table tbody").on('keyup', '.qty,.mrp', function() {
-          var q = $(this).closest('tr').find('.qty').val();
-          var m = $(this).closest('tr').find('.mrp').val();
-          var t = q * m;
-          $(this).closest('tr').find('.tl').val(t);
-          $.fn.calculate_sub();
-          $.fn.calculate_dis();
-     });
+     // $(".table tbody").on('keyup', '.qty,.mrp', function() {
+     //      var q = $(this).closest('tr').find('.qty').val();
+     //      var m = $(this).closest('tr').find('.mrp').val();
+     //      var t = q * m;
+     //      $(this).closest('tr').find('.tl').val(t);
+     //      $.fn.calculate_sub();
+     //      $.fn.calculate_dis();
+     // });
      //discount total calculate 
      $.fn.calculate_total_dis = function() {
           var s = 0;

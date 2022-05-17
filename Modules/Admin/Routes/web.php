@@ -41,6 +41,7 @@ Route::middleware(['check_admin'])->prefix('admin')->group(function () {
         Route::post('/post-product', 'SalesController@store')->name('sales.store');
         Route::get('/sales-invoice/{id}', 'SalesController@show')->name('sales.show');
         Route::get('/sales-edit/{id}', 'SalesController@edit')->name('sales.edit');
+        Route::post('/sales-update', 'SalesController@update')->name('sales.update');
         Route::get('/check-inventory', 'SalesController@checkInventory')->name('sales.check-inventory');
         Route::get('/sales-list', 'SalesController@index')->name('sales.list');
         // ajax routing for purches information

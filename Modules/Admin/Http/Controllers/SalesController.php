@@ -10,6 +10,7 @@ use App\Models\Purchase;
 use Illuminate\Contracts\Support\Renderable;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
+use Session;
 use Illuminate\Support\Facades\Auth;
 
 class SalesController extends Controller
@@ -77,8 +78,6 @@ class SalesController extends Controller
         }else{
             return redirect()->route('sales.create')->with('error', 'Please fill product, showroom/dealer, qty fields');
         }
-        
-        
     }
 
     /**
@@ -121,9 +120,33 @@ class SalesController extends Controller
      * @param int $id
      * @return Renderable
      */
-    public function update(Request $request, $id)
-    {
-        //
+    public function update(Request $request)
+    {   
+        $invoiceID = $request->invoiceID;
+        Main_sale::where('invoiceID', $invoiceID)->delete();
+        if(!empty($request->product_id && $request->qty && $request->showroom || $request->dealer)){
+            foreach ($request->product_id as $k => $id) {
+                $data = new Main_sale();
+                $data->invoiceID = $invoiceID;
+                $data->product_id = $id;
+                $data->showroom_id = $request->showroom;
+                $data->dealer_id = $request->dealer;
+                $data->batchID = $request->batchId[$k];
+                $data->qty = $request->qty[$k];
+                $data->mrp = $request->mrp[$k];
+                $data->discount = $request->dis[$k];
+                $data->discount_type = $request->dis_type[$k];
+                $data->qty = $request->qty[$k];
+                $data->total = $request->total;
+                $data->user_id = Auth::user()->id;
+                $SaveStatus= $data->save();
+            }
+            if($SaveStatus){
+                return redirect()->route('sales.show', $invoiceID);
+            }
+        }else{
+            return redirect()->route('sales.create')->with('error', 'Please fill product, showroom/dealer, qty fields');
+        }
     }
 
     /**
@@ -152,7 +175,7 @@ class SalesController extends Controller
         $data['name'] = $product->name;
         $data['size'] = $product->size->size;
         $data['color'] = $product->color->color;
-        $data['priduct_id'] = $id;
+        $data['product_id'] = $id;
         return \response()->json($data, 200);
     }
     public function getMrp($productId, $batchId){
@@ -176,6 +199,7 @@ class SalesController extends Controller
     public function checkInventory(Request $request){
         $productId = $request->productId;
         $batchId =  $request->batchId;
+
         $inventory = Purchase::select('qty')
         ->groupBy('batchID')
         ->where('product_id',$productId)
